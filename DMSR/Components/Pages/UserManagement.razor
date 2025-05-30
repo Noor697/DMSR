@@ -1,0 +1,265 @@
+﻿@page "/User Management"
+@using DMSR.Models
+@using DMSR.Components.Pages
+@using DMSR.Services
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject UserManagementService UserManagementService
+<!-- Main Card -->
+<div class="card shadow-sm ">
+	<div class="card-body">
+		<div class="d-flex justify-content-between align-items-center ">
+		<h1>User Management</h1>
+        <!--searching-->
+		<div class="input-container">
+			<i class="bi bi-search search-icon"></i>
+                <input type="text" placeholder="Search here..." @bind="SearchTerm" @oninput="OnSearchInput">
+		</div>
+		</div>
+		<h4 class="color">User Management</h4>
+        <!--Filter and Add Buttons -->
+        <div class="d-flex justify-content-end align-items-center mb-3">
+            <div class="d-flex gap-2">
+                <button class="btn text-secondary">
+                    <i class="fa fa-filter me-2"></i>Filter
+                </button>
+                <select @onchange="OnStatusChanged" class="form-select me-3 filter ">
+                    <option value="All Members">All Members</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+               
+            </div>
+            <button class="btn add-user" @onclick="AddUser">Add Users</button>
+        </div>
+
+    <!--table data displaying-->
+        <div class="container my-4">
+            <div class="row">
+                <div class="col-md-12">
+                    @if (FilteredUsers == null)
+                    {
+                        <h5 class="fw-bold text-white text-center p-3 bg-success">Loading...</h5>
+                    }
+                    else if (!FilteredUsers.Any())
+                    {
+                        <h5 class=" text-center text-white bg-success p-3">No Users Found...</h5>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table custom-table">
+                                <thead >
+                                    <tr>
+                                        <th>USER NAME</th>
+                                        <th>EMAIL</th>
+                                        <th>MOBILE NUMBER</th>
+                                        <th>ROLE</th>
+                                        <th>STATUS</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in FilteredUsers)
+                                    {
+                                        <tr>
+                                            <td style="padding-left:40px;">
+                                                <div style="display: flex; align-items: center; gap: 5px;">
+                                                    @if (item.UserImage != null)
+                                                    {
+                                                        <img src="data:image/png;base64,@Convert.ToBase64String(item.UserImage)" alt="Profile"
+                                                             class="img-circle" width="40" height="40" />
+                                                    }
+                                                    <span>@item.UserName</span>
+                                                </div>
+                                            </td>
+
+                                            <td>@item.Email</td>
+                                            <td>@item.MobileNo</td>
+                                            <td>@item.Role</td>
+                                            <td>
+                                                @if (item.Status.ToLower() == "active")
+                                                {
+                                                    <span class="badge text-success alert-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge text-danger alert-danger ">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <button @onclick="() => EditUser(item.UserId)" class="btn act">
+                                                    <img src="/Images/edit-logo.png"  />
+                                                </button>
+                                                <button @onclick="() => ViewUser(item.UserId)" class="btn act">
+                                                    <img src="/Images/eye-logo.png"  />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@* pagination 
+ *@
+<!--Pagination -->
+<div class="pagination-container d-flex float-end gap-2">
+
+    <button class="pagination-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+
+    @for (int i = 1; i <= TotalPages; i++)
+    {
+        <button class="pagination-btn @(currentPage == i ? "active-page" : "")" @onclick="() => GoToPage(i)">
+            @i
+        </button>
+    }
+
+    <button class="pagination-btn" @onclick="NextPage" disabled="@(currentPage == TotalPages)">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+</div>
+
+
+<!-- Modal Component -->
+<UserModal @ref="UserModalRef"  />
+
+@code{
+    private IEnumerable<User_Management>  Users { get; set; }
+    //for modal
+    private UserModal UserModalRef;
+    //for pagination
+    private int currentPage = 1;
+    private int pageSize = 6;
+    private int totalItems;
+
+    private int TotalPages => (int)Math.Ceiling((double)totalItems / pageSize);
+    
+    //Searching users in search bar
+    private string SearchTerm { get; set; } = "";
+    private IEnumerable<User_Management> FilteredUsers { get; set; }
+
+    //filtering
+    private string SelectedStatus = "All Members";
+
+    private void FilteringUsers()
+    {
+        if (SelectedStatus == "All Members")
+        {
+            FilteredUsers = Users;
+        }
+        else
+        {
+            FilteredUsers = Users
+                .Where(u => u.Status.Equals(SelectedStatus, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+    private async Task OnStatusChanged(ChangeEventArgs e)
+    {
+        SelectedStatus = e.Value?.ToString() ?? "All Members";
+        FilteringUsers();
+    }
+
+
+    //searching users
+    private void FilterUsers()
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            FilteredUsers = Users;
+        }
+        else
+        {
+            FilteredUsers = Users.Where(s =>
+                s.UserName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                s.Role.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                s.Status.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) 
+            ).ToList();
+        }
+    }
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        SearchTerm = e.Value?.ToString() ?? string.Empty;
+        FilterUsers();
+    }
+
+    //view button function
+    private async Task ViewUser(int id)
+    {
+        await UserModalRef.View(id); // Call modal’s view method
+    }
+
+
+
+    //first lifecycle method
+   
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllUsersAsync();
+
+
+    }
+
+    private async Task GetAllUsersAsync()
+    {
+        var result = await UserManagementService.GetPaginatedUsersAsync(currentPage, pageSize);
+        Users = result.Item1;    //list of students in current page
+        totalItems = result.Item2;    //total students in database
+        FilterUsers(); // <--- Call it here
+
+      
+
+    }
+
+     // For Edit button
+        async Task EditUser(int id)
+        {
+            await UserModalRef.LoadUser(id); // Load user data into modal
+            UserModalRef.Show();             // Show modal
+        }
+    //for Add button
+    void AddUser()
+    {
+        UserModalRef.ResetDialog(); // Clears previous values
+        UserModalRef.Show(); // Just open empty modal
+    }
+    
+    //pagination
+    private async Task NextPage()
+    {
+        if (currentPage < TotalPages)
+        {
+            currentPage++;
+            await GetAllUsersAsync();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await GetAllUsersAsync();
+        }
+    }
+    private void GoToPage(int page)
+    {
+        currentPage = page;
+    }
+
+   
+
+
+   
+
+}

@@ -1,0 +1,250 @@
+﻿@page "/UserActivityLog"
+@using DMSR.Models
+@using DMSR.Services
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject IJSRuntime JS
+@inject UserActivityLogService UserActivityService
+
+
+
+<!-- Main Card -->
+<div class="card shadow-sm ">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center ">
+            <h1>Activity Logs</h1>
+            <!--searching-->
+            <div class="input-container">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" placeholder="Search here..." @bind="SearchTerm" @oninput="OnSearchInput">
+            </div>
+        </div>
+        <h4 class="color">User Activity Log</h4>
+        <!--Filter and Add Buttons -->
+        <div class="d-flex justify-content-end align-items-center mb-3">
+            <div class="d-flex gap-2">
+                <button class="btn text-secondary">
+                    <i class="fa fa-filter me-2"></i>Filter
+                </button>
+                <select @onchange="OnStatusChanged" class="form-select me-3 filter w-auto ">
+                    <option value="All">All </option>
+                    <option value="Login"> Login</option>
+                    <option value="DocAccess">DocAccess</option>
+                    <option value="Logout">Logout</option>
+                </select>
+
+            </div>
+        </div>
+        <!--table data displaying-->
+        <div class="container my-4">
+            <div class="row">
+                <div class="col-md-12">
+                    @if (FilteredDocs == null)
+                    {
+                        <h5 class="fw-bold text-white text-center p-3 bg-success">Loading...</h5>
+                    }
+                    else if (!FilteredDocs.Any())
+                    {
+                        <h5 class="fw-bold text-white text-center p-3 bg-success">No Users Found...</h5>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table  custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>USER NAME</th>
+                                        <th>ACTIVITY</th>
+                                        <th>DATE</th>
+                                        <th>TIME</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in FilteredDocs)
+                                    {
+                                        <tr>
+
+                                            <td>@item.UserName</td>
+                                            <td>@item.Activity</td>
+                                            <td>@item.Date</td>
+                                            <td>@item.Time</td>
+                                            <td>
+                                                <button @onclick="() => ViewDoc(item.UserAId)" class="btn act">
+                                                    <img src="/Images/eye-logo.png" />
+                                                </button>
+                                                <button class="btn act" @onclick="() => DownloadSingleUser(item.UserAId)">
+                                                    <img src="/Images/Download-logo.png" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@* pagination 
+ *@
+<!--Pagination -->
+<div class="pagination-container d-flex float-end gap-2">
+
+    <button class="pagination-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+
+    @for (int i = 1; i <= TotalPages; i++)
+    {
+        <button class="pagination-btn @(currentPage == i ? "active-page" : "")" @onclick="() => GoToPage(i)">
+            @i
+        </button>
+    }
+
+    <button class="pagination-btn" @onclick="NextPage" disabled="@(currentPage == TotalPages)">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+</div>
+
+<!-- Modal Component -->
+<UserLogModal @ref="ActModalRef" />
+@code {
+    private IEnumerable<UserActivityLog> Docs { get; set; }
+    //for modal
+    private UserLogModal ActModalRef;
+    //for pagination
+    private int currentPage = 1;
+    private int pageSize = 6;
+    private int totalItems;
+
+    private int TotalPages => (int)Math.Ceiling((double)totalItems / pageSize);
+
+    //Searching users in search bar
+    private string SearchTerm { get; set; } = "";
+    private IEnumerable<UserActivityLog> FilteredDocs { get; set; }
+
+    //filtering
+    private string SelectedStatus = "All";
+
+    private void FilteringDocs()
+    {
+        if (SelectedStatus == "All")
+        {
+            FilteredDocs = Docs;
+        }
+        else
+        {
+            FilteredDocs = Docs
+                .Where(u => u.Activity.Equals(SelectedStatus, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+    private async Task OnStatusChanged(ChangeEventArgs e)
+    {
+        SelectedStatus = e.Value?.ToString() ?? "All";
+        FilteringDocs();
+    }
+
+
+    //searching users
+    private void FilterDocs()
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            FilteredDocs = Docs;
+        }
+        else
+        {
+            FilteredDocs = Docs.Where(s =>
+                s.UserName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                s.Activity.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) 
+            ).ToList();
+        }
+    }
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        SearchTerm = e.Value?.ToString() ?? string.Empty;
+        FilterDocs();
+    }
+
+    private async Task ViewDoc(int id)
+    {
+        await ActModalRef.View(id); // Just open the modal
+    }
+
+
+    //first lifecycle method
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllUsersAsync();
+
+    }
+
+    private async Task GetAllUsersAsync()
+    {
+        var result = await UserActivityService.GetPaginatedUsersAsync(currentPage, pageSize);
+        Docs = result.Item1;    //list of students in current page
+        totalItems = result.Item2;    //total students in database
+        FilterDocs(); // <--- Call it here
+
+    }
+
+
+    //pagination
+    private async Task NextPage()
+    {
+        if (currentPage < TotalPages)
+        {
+            currentPage++;
+            await GetAllUsersAsync();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await GetAllUsersAsync();
+        }
+    }
+    private void GoToPage(int page)
+    {
+        currentPage = page;
+    }
+
+    //download file
+    private async Task DownloadSingleUser(int docId)
+    {
+        try
+        {
+            var data = await UserActivityService.GenerateSingleUserAsync(docId);
+            if (data != null && data.Length > 0)
+            {
+                var fileName = $"Document_{docId}.xlsx";
+                var base64 = Convert.ToBase64String(data);
+                await JS.InvokeVoidAsync("downloadExcelFile", fileName, base64);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error downloading single document: {ex.Message}");
+        }
+    }
+
+
+}
+
+
+
+
+
+
+
+

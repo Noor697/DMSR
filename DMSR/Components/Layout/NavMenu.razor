@@ -1,0 +1,156 @@
+﻿@implements IDisposable
+@rendermode InteractiveServer
+
+@inject NavigationManager NavigationManager
+
+<div class="top-row navbar ">
+    <div class="container-fluid">
+        <img src="/Images/Main logo.png" alt="person image" class="navbar-brand logo" />
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item ">
+            <NavLink class="nav-link d-flex justify-content-between align-items-center " href="" Match="NavLinkMatch.All">
+                <div>
+                    <span class="bi bi-windows " aria-hidden="true"></span> Dashboard
+                </div>
+                <i class="bi-chevron-right arrow-icon "></i>
+            </NavLink>
+        </div>
+        <div class="nav-item ">
+            <NavLink class="nav-link d-flex justify-content-between align-items-center" href="user management">
+                <div>
+                    <span class="bi bi-person-gear" aria-hidden="true"></span> User Management
+                </div>
+                <i class=" bi-chevron-right arrow-icon"></i>
+            </NavLink>
+        </div>
+
+        <div class="nav-item ">
+            <NavLink class="nav-link d-flex justify-content-between align-items-center" href="doc management">
+                <div>
+                    <img src="Images/docM.svg" aria-hidden="true" alt="User" class="bi" />
+                    Document Management
+                </div>
+                <i class=" bi-chevron-right arrow-icon"></i>
+
+            </NavLink>
+        </div>
+
+        <!--Activity Log -->
+        <div class="nav-item ">
+            <NavLink class="nav-link d-flex justify-content-between align-items-center" href="Activity Logs" @onclick="() => isExpandSubmenu2 = !isExpandSubmenu2">
+                <div>
+                    <img src="Images/Alogs.svg" alt="User" aria-hidden="true" class="bi" />
+                    Activity Logs
+                </div>
+                <i class=" bi-chevron-right arrow-icon"></i>
+
+            </NavLink>
+            <!-- Submenu for Projects -->
+            @if (isExpandSubmenu2)
+            {
+                <ul class="submenu list ">
+                    <li>
+                        <NavLink class="nav-link d-flex justify-content-between align-items-center" href="DocumentActivityLog">
+                            <div>
+                                <span class="bi bi-dot me-1 "></span> Document Activity Log
+                            </div>
+                            <i class=" bi-chevron-right arrow-icon"></i>
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink class="nav-link d-flex justify-content-between align-items-center" href="UserActivityLog ">
+                            <div>
+                                <span class="bi bi-dot me-1"></span> User Activity Log
+                            </div>
+                            <i class=" bi-chevron-right arrow-icon"></i>
+                        </NavLink>
+                    </li>
+                </ul>
+            }
+        </div>
+
+
+       @*  <div class="nav-item ">
+            <NavLink class="nav-link d-flex justify-content-between align-items-center" href="configration">
+                <div>
+                    <img src="Images/Group 18425.png" aria-hidden="true" alt="User" class="bi" />
+                    Configration
+                </div>
+                <i class=" bi-chevron-right arrow-icon"></i>
+
+            </NavLink>
+        </div>
+ *@
+        @*     <div class="nav-item ">
+            <NavLink class="nav-link" href="auth">
+                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
+            </NavLink>
+     </div>
+ *@
+        <AuthorizeView>
+            <Authorized>
+                @*  <div class="nav-item ">
+                    <NavLink class="nav-link" href="Account/Manage">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
+                    </NavLink>
+                </div>
+                *@ <div class="nav-item ">
+                    <form action="Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="nav-link">
+                            <span class="bi bi-box-arrow-left" aria-hidden="true"></span> Logout
+                        </button>
+                    </form>
+                </div>
+            </Authorized>
+
+            <NotAuthorized>
+                 <div class="nav-item ">
+                    <NavLink class="nav-link" href="Account/Register">
+                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+                    </NavLink>
+                </div>
+                <div class="nav-item ">
+                    <NavLink class="nav-link" href="Account/Login">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Login
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+    bool isExpandSubmenu1 = false;
+    bool isExpandSubmenu2 = false;
+
+
+
+
+}
+

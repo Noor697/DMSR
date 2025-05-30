@@ -1,0 +1,134 @@
+﻿@* @page "/Configration"
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            border-left: 6px solid #059669;
+            padding-left: 15px;
+            color: #059669;
+            font-weight:500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .checkbox-group, .toggle-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: #059669;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+            .btn.cancel {
+                background-color: #d1d5db;
+                color: #111827;
+                margin-left: 15px;
+            }
+            h3{
+                background-color: #059669;
+                color:white;
+                padding:5px;
+            }
+    </style>
+    <div class="container">
+        <h1>Configration</h1>
+
+        <div class="section">
+            <h3>General Settings</h3>
+            <div class="form-group">
+                <label for="systemName">System Name</label>
+                <input type="text" id="systemName" placeholder="DMS - Document Management System">
+            </div>
+            <div class="form-group">
+                <label for="language">Default Language</label>
+                <select id="language">
+                    <option value="en">English</option>
+                    <option value="ur">Urdu</option>
+                </select>
+            </div>
+            <div class="checkbox-group">
+                <label><input type="checkbox"> Enable Theme</label>
+                <label><input type="checkbox"> Dark Mode</label>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Security Settings</h3>
+            <div class="form-group">
+                <label for="minLength">Minimum Password Length</label>
+                <input type="text" id="minLength" placeholder="e.g., 8">
+            </div>
+            <div class="checkbox-group">
+                <label><input type="checkbox"> Require Number</label>
+                <label><input type="checkbox"> Require Symbol</label>
+                <label><input type="checkbox"> Enable 2FA</label>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Notification Settings</h3>
+            <div class="form-group">
+                <label for="email">System Email Address</label>
+                <input type="text" id="email" placeholder="e.g., dms@yourdomain.com">
+            </div>
+            <div class="checkbox-group">
+                <label><input type="checkbox"> Upload</label>
+                <label><input type="checkbox"> Edit</label>
+                <label><input type="checkbox"> Delete</label>
+                <label><input type="checkbox"> Share</label>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Advanced</h3>
+            <div class="checkbox-group">
+                <label><input type="checkbox"> Enable Auto Backup</label>
+            </div>
+        </div>
+
+        <div>
+            <button class="btn">Save</button>
+            <button class="btn cancel">Cancel</button>
+        </div>
+    </div>
+ *@

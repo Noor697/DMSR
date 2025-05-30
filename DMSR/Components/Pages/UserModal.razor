@@ -1,0 +1,282 @@
+﻿@using DMSR.Models
+@using DMSR.Services
+@inject UserManagementService UserManagementService
+<style>
+    .slide-right .modal-dialog {
+    position: fixed;
+    margin: auto;
+    width: 600px;
+    height: 100vh;
+    right: 0px;
+    border-radius: 12px;
+    transition: transform 0.2s ease-in-out; /* Smooth slide-in effect */
+    }
+
+    .modal-content {
+    height: 100%
+    }
+
+
+    .slide-right.show .modal-dialog {
+    transform: translateX(0);
+    right: 0; /* Fully visible */
+    }
+
+    .modal-header {
+    border-bottom: none;
+    background-color: rgba(16, 172, 132, 1);
+    }
+    .modal-title{
+    color:white;
+    font-weight:bold;
+    }
+    .modal-body{
+    margin-left:20px;
+    margin-right: 20px;
+    margin-top:10px;
+    }
+    label{
+    margin-bottom:5px;
+    }
+
+    .lab{
+    font-weight:bold;
+    }
+    .close{
+    background-color: rgba(16, 172, 132, 1);
+    border:none;
+    color:white;
+    font-size:30px;
+    }
+    .circle{
+        display:flex;
+        justify-content:center;
+     
+    }
+</style>
+@if (ShowDialog)
+{
+    <div class="modal fade slide-right show d-block" id="exampleModal" tabindex="-1" role="dialog" @onclick="Close">   @* anywhere in document click the modal closes
+ *@        <div class="modal-dialog right-modal" role="document" @onclick:stopPropagation>   @* stop modal to close while clicking on modal *@
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">User Details</h5>
+                    <button type="button" class="close" @onclick="Close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if (IsViewMode)
+                    {
+                        <!-- View-Only Mode -->
+                        @if (User_Management.UserImage != null)
+                        {<div class="circle mb-3">
+                            <img src="data:image/png;base64,@Convert.ToBase64String(User_Management.UserImage)" alt="Profile" class="img-circle " width="200" height="200" /></div>
+                        }
+
+                        <div class=" d-flex justify-content-between mb-3 bg-light">
+                            <h6 class="lab ">User Name</h6>
+                            <p >@User_Management.UserName</p>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <h6 class="lab">Email</h6>
+                            <p >@User_Management.Email</p>
+                        </div>
+                        <div class=" d-flex justify-content-between mb-3  bg-light">
+                            <h6 class="lab">Phone No</h6>
+                            <p >@User_Management.MobileNo</p>
+                        </div>
+                        <div class=" d-flex justify-content-between mb-3 ">
+                            <h6 class="lab">Role</h6>
+                            <p >@User_Management.Role</p>
+                        </div>
+                        <div class=" d-flex justify-content-between mb-3  bg-light">
+                            <h6 class="lab">Status</h6>
+                            <p >@User_Management.Status</p>
+                        </div>
+
+                    }
+                    else
+                    {
+                        <!-- Edit/Add Mode -->
+                        <EditForm Model="@User_Management" OnValidSubmit="@SaveUsers">
+                            <DataAnnotationsValidator />
+                             <div class=" form-group mb-3 ">
+                                <label>Upload Image</label>
+                                <InputFile class="form-control" @bind-Value="@User_Management.UserImage" accept=".jpg, .jpeg, .png" OnChange="HandleImageFile" />
+                            </div>
+                           
+                            <div class="form-group mb-3">
+                                <label>User Name</label>
+                                <InputText class="form-control" @bind-Value="@User_Management.UserName" />
+                                <ValidationMessage For="@(() => User_Management.UserName)" />
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <div class="form-group col-md-5 mb-3">
+                                    <label>Role</label>
+                                    <InputSelect class="form-control form-select" @bind-Value="User_Management.Role">
+                                        <option value="">Select </option>
+                                        <option value="Accountant">Accountant</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Content Writer">Content Writer</option>
+                                        <option value="MobileApp Developer">MobileApp Developer</option>
+                                        <option value="Junior WordPress Developer"> Junior WordPress Developer</option>
+                                        <option value="Senior WordPress Developer"> Senior WordPress Developer</option>
+                                        <option value="IT Coordinator">IT Coordinator</option>
+                                        <option value="HR Assitant">HR Assistant</option>
+                                        <option value="Junior .Net Developer"> Junior .Net Developer</option>
+                                        <option value="Senior .Net Developer"> Senior .Net Developer</option>
+                                        <option value="Intern">Intern</option>
+                                    </InputSelect>
+                                </div>
+
+                                <div class="form-group col-md-5 mb-3">
+                                    <label>Phone No</label>
+                                    <InputText class="form-control" @bind-Value="User_Management.MobileNo" />
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label>Email</label>
+                                <InputText class="form-control" @bind-Value="User_Management.Email" />
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <div class="form-group col-md-5 mb-3">
+                                    <label>Password</label>
+                                    <InputText class="form-control" @bind-Value="User_Management.Password" />
+                                </div>
+
+                                <div class="form-group col-md-5 mb-3">
+                                    <label>Status</label>
+                                    <InputSelect class="form-control form-select" @bind-Value="User_Management.Status">
+                                        <option value="">Select</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-success col-md-5 mt-3">Save</button>
+                                <button type="button" class="btn btn-danger col-md-5 mt-3" @onclick="Close">Cancel</button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int? id { get; set; }
+    [Parameter] public EventCallback<bool> CloseEventCallback { get; set; }
+    public bool IsViewMode { get; set; } = false;
+
+    private User_Management User_Management = new();
+    public bool ShowDialog { get; set; }
+    //view button
+    // public void Show()
+    // {
+    //     ShowDialog = true;
+    //     StateHasChanged();
+    // }
+    // public void Close()
+    // {
+    //     ShowDialog = false;
+    //     CloseEventCallback.InvokeAsync(true);
+    //     StateHasChanged();
+    // }
+    public void Show()
+    {
+        IsViewMode = false;
+        ShowDialog = true;
+        StateHasChanged();
+    }
+
+    public async Task View(int id)
+    {
+        try
+        {
+            await LoadUser(id);
+            IsViewMode = true;
+            ShowDialog = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in View: " + ex.Message);
+        }
+    }
+
+    public void Close()
+    {
+        ShowDialog = false;
+        IsViewMode = false;
+        CloseEventCallback.InvokeAsync(true);
+        StateHasChanged();
+    }
+
+    public void ResetDialog()
+    {
+        id = null;
+        User_Management = new User_Management();
+    }
+
+    //users info get from  db
+    public async Task LoadUser(int id)
+    {
+        this.id = id;
+
+        var users = await UserManagementService.GetUsersByIdAsync(id);
+        if (users != null)
+        {
+            User_Management = users;
+        }
+
+        StateHasChanged(); // Trigger UI refresh
+    }
+    //function for modal button
+    private async Task SaveUsers()
+    {
+        try
+        {
+            if (id is not null)
+            {
+                // ❗ Logging will be handled inside this service method
+                await UserManagementService.UpdateUsersAsync(User_Management, id.Value);
+            }
+            else
+            {
+                bool success = await UserManagementService.AddDupUsersAsync(User_Management);
+                           }
+
+            Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error saving document: " + ex.Message);
+        }
+    }
+    private string imagePreview;
+
+    private async Task HandleImageFile(InputFileChangeEventArgs e)
+    {
+        byte[] imageBytes;
+        if(e.File != null)
+        {
+            if(e.File.Size <  150000){
+                using(var stream = new MemoryStream())
+                {
+                    await e.File.OpenReadStream().CopyToAsync(stream);
+                    imageBytes = stream.ToArray();
+                    imagePreview = $"data:{e.File.ContentType};base64,{Convert.ToBase64String(imageBytes)}";
+                    User_Management.UserImage = imageBytes;
+                }
+            }
+        }
+    }
+
+}

@@ -1,0 +1,24 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row  ps-4">
+            <img src="/Images/bell-top.png" alt="bell image" class="media-object ms-3 ">
+            <img src="/Images/logo-top.png" alt="person image" class="media-object ms-3 ">
+        </div>
+
+        <article class="content  ">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

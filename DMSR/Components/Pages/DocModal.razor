@@ -1,0 +1,435 @@
+﻿@using DMSR.Models
+@using DMSR.Services
+@inject DocManagementService DocManagementService
+
+<style>
+    .slide-right .modal-dialog {
+    position: fixed;
+    margin: auto;
+    width: 600px;
+    height: 100vh;
+    right: 0px;
+    border-radius: 12px;
+    transition: transform 0.2s ease-in-out; /* Smooth slide-in effect */
+    }
+
+    .modal-content {
+    height: 100%
+    }
+
+
+    .slide-right.show .modal-dialog {
+    transform: translateX(0);
+    right: 0; /* Fully visible */
+    }
+
+    .modal-header {
+    border-bottom: none;
+    background-color: rgba(16, 172, 132, 1);
+    }
+
+    .modal-title {
+    color: white;
+    font-weight: bold;
+    }
+
+    .modal-body {
+    margin-left: 20px;
+    margin-right: 20px;
+    }
+
+    label {
+    margin-bottom: 5px;
+    }
+
+    .align {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .lab {
+    font-weight: bold;
+    }
+
+    .close {
+    background-color: rgba(16, 172, 132, 1);
+    border: none;
+    color: white;
+    font-size: 30px;
+    }
+
+    .circle {
+    display: flex;
+    justify-content: center;
+    }
+
+</style>
+@if (ShowDialog)
+{
+    <div class="modal fade slide-right show d-block" id="exampleModal" tabindex="-1" role="dialog" @onclick="Close">
+        <div class="modal-dialog right-modal" role="document" @onclick:stopPropagation>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Document Details</h5>
+                    <button type="button" class="close" @onclick="Close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if (IsViewMode)
+                    {
+                        <!-- View-Only Mode -->
+                        <div class=" mb-2 align bg-light">
+                            <h6 class="lab">Document Title</h6>
+                            <p>@Doc_Management.Document_title</p>
+                        </div>
+                        <div class=" mb-2 align">
+                            <h6 class="lab">Author</h6>
+                            <p>@Doc_Management.Author</p>
+                        </div>
+                        <div class=" mb-2 align bg-light">
+                            <h6 class="lab">Created Date</h6>
+                            <p>@Doc_Management.CreatedDate</p>
+                        </div>
+                        <div class=" mb-2 align">
+                            <h6 class="lab">Last Modified Date</h6>
+                            <p>@Doc_Management.LastModifiedDate</p>
+                        </div>
+
+                        <div class=" mb-2 align bg-light">
+                            <h6 class="lab">Version</h6>
+                            <p>@Doc_Management.Version</p>
+                        </div>
+                        <div class=" mb-2 align ">
+                            <h6 class="lab">Document Type</h6>
+                            <p>@Doc_Management.Document_type</p>
+                        </div>
+                        <div class=" mb-2 align bg-light">
+                            <h6 class="lab">File Type</h6>
+                            <p>@Doc_Management.FileType</p>
+                        </div>
+                        <div class=" mb-2 align ">
+                            <h6 class="lab">Department</h6>
+                            <p>@Doc_Management.Department</p>
+                        </div>
+                        <div class=" mb-2 align bg-light">
+                            <h6 class="lab">Description</h6>
+                            <p>@Doc_Management.Description</p>
+                        </div>
+
+                        <h6 class="lab mb-2">Uploaded Documents</h6>
+                        <div class="d-flex flex-wrap gap-3">
+                            @for (int i = 0; i < Doc_Management.FileDataList.Count; i++)
+                            {
+                                var fileData = Convert.ToBase64String(Doc_Management.FileDataList[i]);
+                                var fileType = Doc_Management.FileTypeList[i];
+
+                                if (fileType.Contains("pdf"))
+                                {
+                                    <iframe src="data:@fileType;base64,@fileData"
+                                    width="100px" height="100px"></iframe>
+                                }
+                                else if (fileType.Contains("image"))
+                                {
+                                    <img src="data:@fileType;base64,@fileData"
+                                    class="img-thumbnail"
+                                    style="width:80px; height:80px;" />
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Edit/Add Mode -->
+                        <EditForm Model="@Doc_Management" OnValidSubmit="@SaveDocs">
+                            <div class=" form-group mb-2">
+                                <label>Upload Image</label>
+                                <InputFile class="form-control" accept=".png, .jpeg, .jpg" OnChange="HandleImageFile" />
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <div class="form-group col-md-5 mb-2">
+                                    <label>Document Title</label>
+                                    <InputText class="form-control" @bind-Value="Doc_Management.Document_title" />
+                                </div>
+                                <div class="form-group col-md-5 mb-2">
+                                    <label class="form-label">Author</label>
+                                    <select class="form-control form-select" @bind="Doc_Management.Author">
+                                        <option value="">Select Author</option>
+                                        @foreach (var user in users)
+                                        {
+                                            <option value="@user.Name">@user.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+
+
+                            <div class="d-flex justify-content-between">
+                                <div class="form-group col-md-5 mb-2">
+                                    <label>Created Date</label>
+                                    <InputDate class="form-control" @bind-Value="Doc_Management.CreatedDate" />
+                                </div>
+                                <div class="form-group col-md-5 mb-2">
+                                    <label>Last Modified Date</label>
+                                    <InputDate class="form-control" @bind-Value="Doc_Management.LastModifiedDate" />
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <div class="form-group col-md-5 mb-2">
+                                    <label>Version</label>
+                                    <InputText class="form-control" @bind-Value="Doc_Management.Version" />
+                                </div>
+                                <div class="form-group col-md-5 mb-2">
+                                    <label>Document Type</label>
+                                    <InputSelect class="form-control form-select" @bind-Value="Doc_Management.Document_type">
+                                        <option value="">Select </option>
+                                        <option value="Report"> Report</option>
+                                        <option value="Folder">Folder</option>
+                                        <option value="Presentation">Presentation</option>
+                                        <option value="Pdf">Pdf</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div class="form-group col-md-5 mb-2">
+                                    <label>File Type</label>
+                                    <InputText class="form-control" @bind-Value="Doc_Management.FileType" placeholder="Type here" />
+                                </div>
+
+                                <div class="form-group col-md-5 mb-2">
+                                    <label>Department</label>
+                                    <InputSelect class="form-control form-select" @bind-Value="Doc_Management.Department">
+                                        <option value="">Select</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="IT">IT</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="HR">HR</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            <div class="col-12 form-group mb-2">
+                                <label>Description</label>
+                                <InputText class="form-control " @bind-Value="Doc_Management.Description" />
+                            </div>
+
+                            <!-- Upload Image Section -->
+                            <h6>Upload your file here</h6>
+                            <label for="uploadfile" class="form-label">
+                                <div class=" p-2 border bg-white fw-bold text-center  " style="border-radius:3px; width:200px;">
+                                    <span>Upload File</span>
+                                    <i class="bi bi-plus"></i>
+                                </div>
+                            </label>
+                            <InputFile id="uploadfile"
+                            OnChange="FileUploaded"
+                            class="form-control d-none"
+                            multiple />
+                            <p><small class="form-text text-muted p-0 mb-0">Upload supported file (Max 15MB)</small></p>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-success col-md-5 ">Save</button>
+                                <button type="button" class="btn btn-danger col-md-5 " @onclick="Close">Cancel</button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int? id { get; set; }
+    [Parameter] public EventCallback<bool> CloseEventCallback { get; set; }
+    public bool IsViewMode { get; set; } = false;
+
+    private Doc_Management Doc_Management = new();
+    private List<UserSelection> users = new List<UserSelection>();
+
+    public bool ShowDialog { get; set; }
+    public async Task Show()
+    {
+            IsViewMode = false;
+            ShowDialog = true;
+            await LoadUsers(); // Call method to load users
+            StateHasChanged();
+    }
+  
+    public async Task View(int id)
+    {
+        try
+        {
+            await LoadDoc(id);
+            IsViewMode = true;
+            ShowDialog = true;
+
+            // ✅ Log viewed activity only when viewing
+            await DocManagementService.AddDocActivityAsync(new DocActivityLogs
+                {
+                    Document_title = Doc_Management.Document_title,
+                    Document_activity = "View",
+                    Performedby = Doc_Management.Author,
+                    Actfile = Doc_Management.Docfile
+                });
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in View: " + ex.Message);
+        }
+    }
+
+
+    public void Close()
+    {
+        ShowDialog = false;
+        IsViewMode = false;
+        CloseEventCallback.InvokeAsync(true);
+        StateHasChanged();
+    }
+
+    public void ResetDialog()
+    {
+        id = null;
+        Doc_Management = new Doc_Management();
+    }
+
+  
+    private async Task LoadUsers()
+    {
+        var allusers = await DocManagementService.GetUsersAsync();
+        users = allusers.Select(c => new UserSelection
+            {
+                Id = c.UserId,
+                Name = c.UserName
+            }).ToList();
+    }
+
+    // //users info get from  db
+    public async Task LoadDoc(int id)
+    {
+        this.id = id;
+        var docs = await DocManagementService.GetdocsByIdAsync(id);
+        await LoadUsers(); // instead of repeating code
+
+
+        if (docs != null)
+        {
+            Doc_Management = docs ?? new Doc_Management();
+        }
+       // StateHasChanged(); // Trigger UI refresh
+
+    }
+   
+    private async Task SaveDocs()
+    {
+        try
+        {
+            var allusers = await DocManagementService.GetUsersAsync();
+            Doc_Management.Users = allusers
+                .Where(c => c.UserName == Doc_Management.Author)
+                .ToList();
+
+            if (id is not null)
+            {
+                // ❗ Logging will be handled inside this service method
+                await DocManagementService.UpdatedocsAsync(Doc_Management, id.Value, Doc_Management.Author);
+            }
+            else
+            {
+                bool success = await DocManagementService.AddDupdocsAsync(Doc_Management);
+                if (!success)
+                    return;
+
+                // ✅ Only log for newly created documents
+                var log = new DocActivityLogs
+                    {
+                        Document_title = Doc_Management.Document_title,
+                        Document_activity = "Create",
+                        Performedby = Doc_Management.Author,
+                        Actfile = Doc_Management.Docfile
+                    };
+
+                await DocManagementService.AddDocActivityAsync(log);
+            }
+
+            Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error saving document: " + ex.Message);
+        }
+    }
+    //for single images
+    private string imagePreview;
+
+    private async Task HandleImageFile(InputFileChangeEventArgs e)
+    {
+        byte[] imageBytes;
+        if (e.File != null)
+        {
+            if (e.File.Size < 150000)
+            {
+                using (var stream = new MemoryStream())
+                {
+                    await e.File.OpenReadStream().CopyToAsync(stream);
+                    imageBytes = stream.ToArray();
+                    imagePreview = $"data:{e.File.ContentType};base64,{Convert.ToBase64String(imageBytes)}";
+                    Doc_Management.Docfile = imageBytes;
+                }
+            }
+        }
+    }
+  
+    //single file upload
+    public List<Doc_Management> UploadedDocuments = new();
+
+    public async Task FileUploaded(InputFileChangeEventArgs e)
+    {
+        var browserFiles = e.GetMultipleFiles();
+
+        foreach (var browserFile in browserFiles)
+        {
+            try
+            {
+                using var ms = new MemoryStream();
+                await browserFile.OpenReadStream(15 * 1024 * 1024).CopyToAsync(ms); // Max 15MB
+                ms.Position = 0;
+                var fileBytes = ms.ToArray();
+
+                // Save in memory (for preview)
+                Doc_Management.FileDataList.Add(fileBytes);
+                Doc_Management.FileTypeList.Add(browserFile.ContentType); // e.g., application/pdf
+                Doc_Management.FileNames.Add(browserFile.Name);
+
+                // Save physically in wwwroot/UploadedFiles
+                var uploadFolder = Path.Combine(Environment.CurrentDirectory, "wwwroot", "UploadedFiles");
+                if (!Directory.Exists(uploadFolder))
+                    Directory.CreateDirectory(uploadFolder);
+
+                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(browserFile.Name)}";
+                var filePath = Path.Combine(uploadFolder, uniqueFileName);
+
+                await using var fileStream = new FileStream(filePath, FileMode.Create);
+                await fileStream.WriteAsync(fileBytes);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error uploading file: " + ex.Message);
+            }
+        }
+    }
+    private class UserSelection
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public bool Selected { get; set; }
+    }
+
+
+}

@@ -1,0 +1,156 @@
+﻿@using DMSR.Models
+@using DMSR.Services
+@inject UserActivityLogService UserActivityService
+@inject IJSRuntime JS
+
+<style>
+    .slide-right .modal-dialog {
+        position: fixed;
+        margin: auto;
+        width: 600px;
+        height: 100vh;
+        right: 0px;
+        border-radius: 12px;
+        transition: transform 0.2s ease-in-out; /* Smooth slide-in effect */
+    }
+
+    .modal-content {
+        height: 100%
+    }
+
+
+    .slide-right.show .modal-dialog {
+        transform: translateX(0);
+        right: 0; /* Fully visible */
+    }
+
+    .modal-header {
+        border-bottom: none;
+        background-color: rgba(16, 172, 132, 1);
+    }
+
+    .modal-title {
+        color: white;
+        font-weight: bold;
+    }
+
+    .modal-body {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    label {
+        margin-bottom: 5px;
+    }
+
+    .align {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .lab {
+        font-weight: bold;
+    }
+
+    .close {
+        background-color: rgba(16, 172, 132, 1);
+        border: none;
+        color: white;
+        font-size: 30px;
+    }
+
+    .circle {
+        display: flex;
+        justify-content: center;
+    }
+
+</style>
+
+@if (IsVisible)
+{
+    <div class="modal fade slide-right show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="Close">
+        <div class="modal-dialog" @onclick:stopPropagation>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">View User Activity Log</h5>
+                    <button type="button" class="close" aria-label="Close" @onclick="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if (IsLoading)
+                    {
+                        <p>Loading details...</p>
+                    }
+                    else if (_currentLog == null)
+                    {
+                        <p>No details available.</p>
+                    }
+                    else
+                    {
+                        <div class="details-container">
+
+                            <div class=" mb-2 align bg-light">
+                                <h6 class="lab">User Name</h6>
+                                <p>@_currentLog.UserName</p>
+                            </div>
+                            <div class=" mb-2 align">
+                                <h6 class="lab">Activity</h6>
+                                <p>@_currentLog.Activity</p>
+                            </div>
+                            <div class=" mb-2 align">
+                                <h6 class="lab">Date</h6>
+                                <p>@_currentLog.Date.ToString("yyyy-MM-dd")</p>
+                            </div>
+
+                            <div class=" mb-2 align bg-light">
+                                <h6 class="lab">Time</h6>
+                                <p>@_currentLog.Time.ToString("HH:mm")</p>
+                            </div>
+
+                        </div>
+
+
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private UserActivityLog _currentLog;
+    private bool IsVisible = false;
+    private bool IsLoading = false;
+
+    public async Task View(int id)
+    {
+        IsVisible = true;
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _currentLog = await UserActivityService.GetUserActivityByIdAsync(id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading doc activity: {ex.Message}");
+            _currentLog = null;
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Close()
+    {
+        IsVisible = false;
+        _currentLog = null;
+        StateHasChanged();
+    }
+}
